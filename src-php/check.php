@@ -12,9 +12,9 @@ $numofusers = mysql_num_rows($thedata);
 $row = mysql_fetch_assoc($thedata);
 
 if(md5($row[$user_password_field]+$mainsalt+$salt)==$_GET["pass"]){
-	echo "yes<br/>";
+	echo "yes\n<br/>";
 }
 else {
-	echo "no<br/?";
+	echo "no\n<br/>";
 }
 ?>
