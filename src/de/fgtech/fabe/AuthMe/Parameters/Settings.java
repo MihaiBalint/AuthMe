@@ -352,6 +352,27 @@ public class Settings extends Configuration {
 		return this.getKeys(key);
 	}
 
+	public String WebDSsharedSecret() {
+		String key = "WebDS.SharedSecret";
+		return this.getString(key, "password");
+	}
+
+	public String WebDSRegisteredPlayerCountURL() {
+		String key = "WebDS.RegisteredPlayerCountURL";
+		return this.getString(key, "http://localhost/countreg.php");
+	}
+
+	public String WebDSRegisteredPlayerCheckURL() {
+		String key = "WebDS.RegisteredPlayerCheckURL";
+		return this.getString(key, "http://localhost/isreg.php");
+	}
+
+	public String WebDSPlayerSecretCheckURL() {
+		String key = "WebDS.PlayerSecretCheckURL";
+		return this.getString(key, "http://localhost/check.php");
+	}
+	
+	
 	public Map<String, String> getCustomInformationFields() {
 		List<String> keys = getCustomInformationKeys();
 

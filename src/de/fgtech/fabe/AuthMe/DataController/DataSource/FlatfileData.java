@@ -14,8 +14,9 @@ import java.util.Scanner;
 import de.fgtech.fabe.AuthMe.DataController.RegistrationCache.RegistrationCache;
 import de.fgtech.fabe.AuthMe.DataController.RegistrationCache.RegistrationData;
 import de.fgtech.fabe.AuthMe.Parameters.Settings;
+import static de.fgtech.fabe.AuthMe.DataController.PwHash.encrypt;
 
-public class FlatfileData extends DataSource {
+public class FlatfileData implements ICachableDataSource {
 
 	public FlatfileData() {
 		String authFolder = Settings.AUTH_FILE.substring(0,
@@ -64,7 +65,8 @@ public class FlatfileData extends DataSource {
 	}
 
 	@Override
-	public boolean saveAuth(String username, String hash, Map<String, String> customInformation) {
+	public boolean saveAuth(String username, String plainTextPass, Map<String, String> customInformation) {
+		String hash = encrypt(plainTextPass);
 		BufferedWriter bw = null;
 
 		try {
@@ -156,7 +158,8 @@ public class FlatfileData extends DataSource {
 	}
 
 	@Override
-	public boolean updateAuth(String username, String hash) {
+	public boolean updateAuth(String username, String newPlainTextPass) {
+		String hash = encrypt(newPlainTextPass);
 		boolean checkRem = removeAuth(username);
 		boolean checkSave = saveAuth(username, hash, null);
 		if(checkRem && checkSave){
@@ -166,7 +169,16 @@ public class FlatfileData extends DataSource {
 	}
 
 	@Override
-	public String loadHash(String playername) {
+	public boolean checkPass(String playername, String playerGivenPlainTextPass) {
+		String playerGivenHash = encrypt(playerGivenPlainTextPass);
+		String realHash = loadHash(playername.toLowerCase());
+		if(null==realHash) return false;
+		
+		return realHash.equals(playerGivenHash);
+	}
+	
+	
+	private String loadHash(String playername) {
 		final File file = new File(Settings.AUTH_FILE);
 
 		if (!file.exists()) {

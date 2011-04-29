@@ -4,8 +4,6 @@ import java.util.List;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,10 +17,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import de.fgtech.fabe.AuthMe.DataController.DataController;
-import de.fgtech.fabe.AuthMe.DataController.DataSource.DataSource;
+import de.fgtech.fabe.AuthMe.DataController.CachingDataController;
 import de.fgtech.fabe.AuthMe.DataController.DataSource.FlatfileData;
+import de.fgtech.fabe.AuthMe.DataController.DataSource.IDataSource;
 import de.fgtech.fabe.AuthMe.DataController.DataSource.MySQLData;
+import de.fgtech.fabe.AuthMe.DataController.DataSource.WebData;
 import de.fgtech.fabe.AuthMe.InventoryCache.FlatfileCache;
 import de.fgtech.fabe.AuthMe.InventoryCache.InventoryArmour;
 import de.fgtech.fabe.AuthMe.Listener.AuthMeBlockListener;
@@ -52,11 +51,10 @@ public class AuthMe extends JavaPlugin {
 	public Settings settings;
 	public Messages messages;
 	public PlayerCache playercache;
-	public DataController datacontroller;
+	public IDataSource datacontroller;
 	public FlatfileCache invcache;
 	public SessionHandler sessionhandler;
-	public DataSource datas;
-
+	
 	public void onEnable() {
 		// Creating dir, if it doesn't exist
 		final File folder = new File(Settings.PLUGIN_FOLDER);
@@ -92,6 +90,8 @@ public class AuthMe extends JavaPlugin {
 		// Save the current time to use it later
 		long before = System.currentTimeMillis();
 
+		boolean caching = settings.CachingEnabled();
+
 		// Create the wished DataSource
 		if (settings.DataSource().equals("mysql")) {
 			MessageHandler.showInfo("Using MySQL as datasource!");
@@ -104,17 +104,25 @@ public class AuthMe extends JavaPlugin {
 			String tableName = settings.MySQLCustomTableName();
 			String columnName = settings.MySQLCustomColumnName();
 			String columnPassword = settings.MySQLCustomColumnPassword();
-			datas = new MySQLData(host, port, database, username, password,
+			MySQLData datas = new MySQLData(host, port, database, username, password,
 					tableName, columnName, columnPassword);
+			datacontroller = caching ? new CachingDataController(datas) : datas;
+			
+		} else if (settings.DataSource().equals("webds")) {
+			MessageHandler.showInfo("Using WebDS as datasource!");
+			
+			datacontroller = new WebData(
+				settings.WebDSsharedSecret(),
+				settings.WebDSRegisteredPlayerCountURL(),
+				settings.WebDSRegisteredPlayerCheckURL(),
+				settings.WebDSPlayerSecretCheckURL()
+			);
 		} else {
 			MessageHandler.showInfo("Using flatfile as datasource!");
 
-			datas = new FlatfileData();
+			FlatfileData datas = new FlatfileData();
+			datacontroller = caching ? new CachingDataController(datas) : datas;
 		}
-
-		// Setting up the DataController
-		boolean caching = settings.CachingEnabled();
-		datacontroller = new DataController(datas, caching);
 
 		// Outputs the time that was needed for loading the registrations
 		float timeDiff = (float) (System.currentTimeMillis() - before);
@@ -255,7 +263,7 @@ public class AuthMe extends JavaPlugin {
 			String password = args[0];
 
 			boolean executed = datacontroller.saveAuth(player.getName(),
-					encrypt(password), customInformation);
+					password, customInformation);
 
 			if (!executed) {
 				player.sendMessage(messages.getMessage("Error.DatasourceError"));
@@ -305,9 +313,7 @@ public class AuthMe extends JavaPlugin {
 				return false;
 			}
 
-			final String realPassword = datacontroller.getHash(playername);
-
-			if (!realPassword.equals(encrypt(password))) {
+			if (!datacontroller.checkPass(playername, password)) {
 				if (settings.KickOnWrongPassword()) {
 					player.kickPlayer(messages
 							.getMessage("Error.InvalidPassword"));
@@ -352,14 +358,13 @@ public class AuthMe extends JavaPlugin {
 				player.sendMessage("Usage: /changepassword <oldpassword> <newpassword>");
 				return false;
 			}
-			if (!datacontroller.getHash(player.getName()).equals(
-					encrypt(args[0]))) {
+			
+			if (!datacontroller.checkPass(player.getName(), args[0])) {
 				player.sendMessage(messages.getMessage("Error.WrongPassword"));
 				return false;
 			}
 
-			boolean executed = datacontroller.updateAuth(player.getName(),
-					encrypt(args[1]));
+			boolean executed = datacontroller.updateAuth(player.getName(), args[1]);
 
 			if (!executed) {
 				player.sendMessage(messages.getMessage("Error.DatasourceError"));
@@ -419,8 +424,8 @@ public class AuthMe extends JavaPlugin {
 				player.sendMessage("Usage: /unregister <password>");
 				return false;
 			}
-			if (!datacontroller.getHash(player.getName()).equals(
-					encrypt(args[0]))) {
+			
+			if (!datacontroller.checkPass(player.getName(), args[0])) {
 				player.sendMessage(messages.getMessage("Error.WrongPassword"));
 				return false;
 			}
@@ -487,8 +492,8 @@ public class AuthMe extends JavaPlugin {
 							+ "Error: There is no need to reload the authentication cache. Caching is disabled in config anyway!");
 					return false;
 				}
-
-				datacontroller = new DataController(datas, true);
+				
+				((CachingDataController)datacontroller).reloadCache(); 
 
 				sender.sendMessage(ChatColor.GREEN
 						+ "AuthMe has successfully reloaded all authentications!");
@@ -638,20 +643,6 @@ public class AuthMe extends JavaPlugin {
 
 			invcache.removeCache(player.getName());
 		}
-	}
-
-	public String encrypt(String string) {
-		try {
-			final MessageDigest m = MessageDigest.getInstance("MD5");
-			final byte[] bytes = string.getBytes();
-			m.update(bytes, 0, bytes.length);
-			final BigInteger i = new BigInteger(1, m.digest());
-
-			return String.format("%1$032X", i).toLowerCase();
-		} catch (final Exception e) {
-		}
-
-		return "";
 	}
 
 	public void extractDefaultFile(String name) {

@@ -12,7 +12,9 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Map;
 
-public class MySQLData extends DataSource {
+import static de.fgtech.fabe.AuthMe.DataController.PwHash.encrypt;
+
+public class MySQLData implements ICachableDataSource {
 
 	private Connection connection = null;
 	private Statement statement = null;
@@ -133,8 +135,9 @@ public class MySQLData extends DataSource {
 	}
 
 	@Override
-	public boolean saveAuth(String playername, String hash,
+	public boolean saveAuth(String playername, String plainTextPass, 
 			Map<String, String> customInformation) {
+		String hash = encrypt(plainTextPass);
 		try {
 			if (connection.isClosed())
 				connect();
@@ -164,7 +167,8 @@ public class MySQLData extends DataSource {
 	}
 
 	@Override
-	public boolean updateAuth(String playername, String hash) {
+	public boolean updateAuth(String playername, String newPlainTextPass) {
+		String hash = encrypt(newPlainTextPass);
 		try {
 			if (connection.isClosed())
 				connect();
@@ -204,7 +208,15 @@ public class MySQLData extends DataSource {
 	}
 
 	@Override
-	public String loadHash(String playername) {
+	public boolean checkPass(String playername, String playerGivenPlainTextPass) {
+		String playerGivenHash = encrypt(playerGivenPlainTextPass);
+		String realHash = loadHash(playername.toLowerCase());
+		if(null==realHash) return false;
+		
+		return realHash.equals(playerGivenHash);
+	}
+	
+	private String loadHash(String playername) {
 		try {
 			if (connection.isClosed())
 				connect();

@@ -9,7 +9,7 @@ DataController:
     # Otherwise let it to true!
     CacheEnabled: true
  
-    # Possible datasources are 'flatfile' or 'mysql'
+    # Possible datasources are 'flatfile' or 'mysql' or 'WebDS'
     Datasource: flatfile
  
 ############################################################
@@ -139,3 +139,17 @@ MySQL:
         # If you are still unsure, check the given example below (email)
         RegistrationInfo:
 #            email: '^\w+@[a-zA-Z_]+?\.[a-zA-Z]{2,3}$'
+
+############################################################
+# +------------------------------------------------------+ #
+# |                  WebDS Settings                      | #
+# +------------------------------------------------------+ #
+############################################################ 
+WebDS:
+	# URL details
+	# used to salt passwords, should be the same on the server side 
+	SharedSecret: password 
+	RegisteredPlayerCountURL: http://localhost/countreg.php
+	RegisteredPlayerCheckURL: http://localhost/isreg.php
+	PlayerSecretCheckURL: http://localhost/check.php
+#
