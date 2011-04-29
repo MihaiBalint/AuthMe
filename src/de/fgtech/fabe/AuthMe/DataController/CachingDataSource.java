@@ -9,11 +9,11 @@ import de.fgtech.fabe.AuthMe.DataController.RegistrationCache.RegistrationData;
 
 import static de.fgtech.fabe.AuthMe.DataController.PwHash.encrypt;
 
-public class CachingDataController implements IDataSource {
+public class CachingDataSource implements IDataSource {
 	private ICachableDataSource datas;
 	private RegistrationCache regcache;
 
-	public CachingDataController(ICachableDataSource dataf) {
+	public CachingDataSource(ICachableDataSource dataf) {
 		this.datas = dataf;
 		reloadCache();
 	}

@@ -17,7 +17,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import de.fgtech.fabe.AuthMe.DataController.CachingDataController;
+import de.fgtech.fabe.AuthMe.DataController.CachingDataSource;
 import de.fgtech.fabe.AuthMe.DataController.DataSource.FlatfileData;
 import de.fgtech.fabe.AuthMe.DataController.DataSource.IDataSource;
 import de.fgtech.fabe.AuthMe.DataController.DataSource.MySQLData;
@@ -106,7 +106,7 @@ public class AuthMe extends JavaPlugin {
 			String columnPassword = settings.MySQLCustomColumnPassword();
 			MySQLData datas = new MySQLData(host, port, database, username, password,
 					tableName, columnName, columnPassword);
-			datacontroller = caching ? new CachingDataController(datas) : datas;
+			datacontroller = caching ? new CachingDataSource(datas) : datas;
 			
 		} else if (settings.DataSource().equals("webds")) {
 			MessageHandler.showInfo("Using WebDS as datasource!");
@@ -121,7 +121,7 @@ public class AuthMe extends JavaPlugin {
 			MessageHandler.showInfo("Using flatfile as datasource!");
 
 			FlatfileData datas = new FlatfileData();
-			datacontroller = caching ? new CachingDataController(datas) : datas;
+			datacontroller = caching ? new CachingDataSource(datas) : datas;
 		}
 
 		// Outputs the time that was needed for loading the registrations
@@ -493,7 +493,7 @@ public class AuthMe extends JavaPlugin {
 					return false;
 				}
 				
-				((CachingDataController)datacontroller).reloadCache(); 
+				((CachingDataSource)datacontroller).reloadCache(); 
 
 				sender.sendMessage(ChatColor.GREEN
 						+ "AuthMe has successfully reloaded all authentications!");
