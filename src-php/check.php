@@ -10,10 +10,11 @@ $dbquery = "SELECT " . "*" ." FROM " . $user_table. " WHERE " . $user_name_field
 $thedata = mysql_query($dbquery) or die(mysql_error());
 $numofusers = mysql_num_rows($thedata);
 $row = mysql_fetch_assoc($thedata);
-if($row[$user_password_field]==md5($_GET["pass"])){
-	echo "correct";
+
+if(md5($row[$user_password_field]+$mainsalt+$salt)==$_GET["pass"]){
+	echo "yes<br/>";
 }
 else {
-	echo "Incorrect";
+	echo "no<br/?";
 }
 ?>
