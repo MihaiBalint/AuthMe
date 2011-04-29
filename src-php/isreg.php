@@ -9,10 +9,10 @@ $thedata = mysql_query($dbquery) or die("<html>no<br/></html>");
 $numofusers = mysql_num_rows($thedata);
 
 if ($numofusers>0){
-	echo "yes\n";
+	echo "YES\n";
 }
 else{
-	echo "no\n";
+	echo "NO\n";
 }
 
 ?>
