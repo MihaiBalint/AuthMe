@@ -5,7 +5,7 @@ require_once 'connect.php';
 $user = strtolower($_GET["pn"]);
 $passw = $_GET["sh"];
 $salt = $_GET["si"];
-$dbquery = "SELECT " . "*" ." FROM " . $user_table. " WHERE " . $user_name_field . "=" ."'" .$user."'" ;
+$dbquery = "SELECT " . "*" ." FROM " . $user_table. " WHERE LOWER(" . $user_name_field . ")=" ."'" .$user."'" ;
 
 $thedata = mysql_query($dbquery) or die(mysql_error());
 $numofusers = mysql_num_rows($thedata);
